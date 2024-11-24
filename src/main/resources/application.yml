@@ -1,6 +1,6 @@
 spring:
   application:
-    name: UserService
+    name: userservice  # Avoid underscores for better compatibility
   datasource:
     url: jdbc:mysql://localhost:3306/userservice
     username: root
@@ -9,15 +9,79 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  config:
+    import: optional:configserver:http://localhost:8085
+  profiles:
+    active: dev  # Set this to ensure the dev profile is active
 
 server:
   port: 8081
 
 eureka:
-  client:
-    fetchRegistry: true
-    registerWithEureka: true
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka
   instance:
+    appname: USER-SERVICE  # Corrected 'app name' to 'appname'
     prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # Expose all endpoints
+
+  endpoint:
+    health:
+      show-details: always  # Enable detailed health information
+
+  health:
+    db:
+      enabled: true
+    diskspace:   # Corrected spacing for diskspace
+      enabled: true
+    ping:
+      enabled: true
+    cache:
+      enabled: true
+    mail:
+      enabled: true
+    circuit-breakers:
+      enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ratingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumeBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+  retry:
+    instances:
+      ratingHotelService:
+        max-attempts: 3
+        wait-duration: 5s
+
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limit-refresh-period: 4s
+        limit-for-period: 2
+        timeout-duration: 2s
+
+
+    #eureka:
+ # client:
+ #   fetchRegistry: true
+  #  registerWithEureka: true
+   # serviceUrl:
+    #  defaultZone: http://localhost:8761/eureka
+  #instance:
+   # prefer-ip-address: true
+
+
